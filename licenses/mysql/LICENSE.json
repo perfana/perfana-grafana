@@ -1,0 +1,7 @@
+{
+  "name": "mysql",
+  "version": "^2.18.1",
+  "license": "MIT",
+  "repository": "git+https://github.com/mysqljs/mysql.git",
+  "homepage": "https://github.com/mysqljs/mysql#readme"
+}

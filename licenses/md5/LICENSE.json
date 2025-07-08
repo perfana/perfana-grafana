@@ -1,0 +1,7 @@
+{
+  "name": "md5",
+  "version": "^2.2.1",
+  "license": "BSD-3-Clause",
+  "repository": "git://github.com/pvorb/node-md5.git",
+  "homepage": "https://github.com/pvorb/node-md5#readme"
+}

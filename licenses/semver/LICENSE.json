@@ -1,0 +1,7 @@
+{
+  "name": "semver",
+  "version": "^7.3.8",
+  "license": "ISC",
+  "repository": "git+https://github.com/npm/node-semver.git",
+  "homepage": "https://github.com/npm/node-semver#readme"
+}

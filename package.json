@@ -1,0 +1,31 @@
+{
+  "name": "perfana-grafana",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "MONGO_URL=mongodb://${DOCKER_HOST_IP}:27012,${DOCKER_HOST_IP}:27013/perfana?replicaSet=rs0  SYNC_INTERVAL=30000 MAX_SERIES=2  nodemon index.js",
+    "fetch-licenses": "node scripts/fetch-licenses-runner.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.1",
+    "bluebird": "^3.7.2",
+    "jsonpath-plus": "^10.3.0",
+    "lodash": "^4.17.21",
+    "md5": "^2.2.1",
+    "meteor-random": "0.0.3",
+    "moment": "^2.29.4",
+    "mongodb": "^4.8.0",
+    "mysql": "^2.18.1",
+    "node-fetch": "^2.6.9",
+    "pg": "^8.8.0",
+    "semver": "^7.3.8",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}

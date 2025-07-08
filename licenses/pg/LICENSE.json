@@ -1,0 +1,7 @@
+{
+  "name": "pg",
+  "version": "^8.8.0",
+  "license": "MIT",
+  "repository": "git://github.com/brianc/node-postgres.git",
+  "homepage": "https://github.com/brianc/node-postgres"
+}

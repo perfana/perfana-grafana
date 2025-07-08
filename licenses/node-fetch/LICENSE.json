@@ -1,0 +1,7 @@
+{
+  "name": "node-fetch",
+  "version": "^2.6.9",
+  "license": "MIT",
+  "repository": "git+https://github.com/node-fetch/node-fetch.git",
+  "homepage": "https://github.com/node-fetch/node-fetch"
+}

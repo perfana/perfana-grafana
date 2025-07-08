@@ -1,0 +1,7 @@
+{
+  "name": "async",
+  "version": "^3.2.1",
+  "license": "MIT",
+  "repository": "git+https://github.com/caolan/async.git",
+  "homepage": "https://caolan.github.io/async/"
+}

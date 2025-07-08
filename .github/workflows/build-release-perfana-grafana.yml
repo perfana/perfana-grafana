@@ -1,0 +1,134 @@
+# Copyright 2025 Perfana Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This is a basic workflow that is manually triggered
+
+name: Build perfana-grafana release image
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+
+jobs:
+  build_release_image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code from code branch
+        uses: actions/checkout@v2
+        with:
+          path: main
+          fetch-depth: 0
+      - name: Install git-tag-version
+        working-directory: main
+        run: |
+          sudo npm install -g git-tag-version
+      - name: Get tag
+        working-directory: main
+        run: |
+          echo 'TAG_NAME<<EOF' >> $GITHUB_ENV
+          git-tag-version >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Write tag to file
+        uses: "finnp/create-file-action@master"
+        env:
+          FILE_NAME: "main/version.txt"
+          FILE_DATA: "${{ env.TAG_NAME }}"
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        if: contains(env.TAG_NAME, 'SNAPSHOT') != true
+        with:
+          node-version: '12.x'
+      - name: Create directory for obfucated files
+        working-directory: main
+        run: |
+          mkdir obfuscated || true
+          cd obfuscated
+          cp ../package.json .
+          cp ../package-lock.json .
+          cp ../version.txt .
+          ls -all
+      - name: Obfuscate JavaScript code
+        if: contains(env.TAG_NAME, 'SNAPSHOT') != true
+        working-directory: main
+        run: |
+          npm install javascript-obfuscator
+          ls -all
+          node obfuscate
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to Docker registry
+        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Build the tagged Docker image
+        working-directory: main
+        if: contains(env.TAG_NAME, 'SNAPSHOT') != true
+        run: |
+          echo ${{ env.TAG_NAME }}
+          cd obfuscated
+          sudo cp ../Dockerfile .
+          sudo cp ../.dockerignore .
+          sudo cp ../startup.sh .
+          sudo cp ../entrypoint.sh .
+          docker buildx build --platform linux/amd64,linux/arm64 --push  -t perfana/perfana-grafana:${{ env.TAG_NAME }} .
+
+      - name: Run Snyk to check Docker image for vulnerabilities
+        continue-on-error: true
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: perfana/perfana-grafana:${{ env.TAG_NAME }}
+          args: --severity-threshold=high --app-vulns
+          #      - name: Push the tagged Docker image
+          #        if: contains(env.TAG_NAME, 'SNAPSHOT') != true
+          #        run: docker push perfana/perfana-grafana:${{ env.TAG_NAME }}
+
+
+          ## checkout perfana-gitops
+      - name: Checkout perfana-gitops
+        uses: actions/checkout@v2
+        with:
+          repository: perfana/perfana-gitops
+          token: ${{ secrets.PAT }}
+          path: perfana-gitops
+      - name: Replace image tag in perfana-gitops
+        working-directory: perfana-gitops
+        run: |
+          repository="repository: perfana/perfana-grafana"
+          tag="tag: ${{ env.TAG_NAME }}"
+          echo "$repository"
+          echo "$tag"
+          ls -all
+          sed -i "s|repository: .*|$repository|g" ./apps/perfana/demo/perfana/perfana-grafana-values.yaml
+          sed -i "s|tag: .*|$tag|g" ./apps/perfana/demo/perfana/perfana-grafana-values.yaml
+      - name: Commit files
+        working-directory: perfana-gitops
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Bumped perfana-grafana to ${{ env.TAG_NAME }} in demo environment" -a
+          git push
+

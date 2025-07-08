@@ -1,0 +1,18 @@
+{
+  "access": "proxy",
+  "basicAuth": true,
+  "basicAuthUser": "admin",
+  "database": "telegraf",
+  "id": 10,
+  "jsonData": {},
+  "name": "influxDb-telegraf",
+  "orgId": 1,
+  "secureJsonFields": {
+    "basicAuthPassword": true
+  },
+  "type": "influxdb",
+  "typeLogoUrl": "public/app/plugins/datasource/influxdb/img/influxdb_logo.svg",
+  "uid": "influxdb-telegraf",
+  "url": "http://influxdb:8086",
+  "version": 1
+} 

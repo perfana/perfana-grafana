@@ -1,0 +1,7 @@
+{
+  "name": "moment",
+  "version": "^2.29.4",
+  "license": "MIT",
+  "repository": "git+https://github.com/moment/moment.git",
+  "homepage": "https://momentjs.com"
+}

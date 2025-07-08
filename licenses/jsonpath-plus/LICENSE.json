@@ -1,0 +1,7 @@
+{
+  "name": "jsonpath-plus",
+  "version": "^7.0.0",
+  "license": "MIT",
+  "repository": "git://github.com/s3u/JSONPath.git",
+  "homepage": "https://github.com/s3u/JSONPath"
+}

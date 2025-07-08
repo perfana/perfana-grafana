@@ -1,0 +1,99 @@
+# Copyright 2025 Perfana Contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This is a basic workflow that is manually triggered
+
+name: Build perfana-grafana snapshot image
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+
+jobs:
+  build_snapshot_image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code from code branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install git-tag-version
+        run: |
+          sudo npm install -g git-tag-version
+      - name: Get tag
+        run: |
+          echo 'TAG_NAME<<EOF' >> $GITHUB_ENV
+          git-tag-version >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Write tag to file
+        run: |
+          echo "${{ env.TAG_NAME }}" > version.txt
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        if: contains(env.TAG_NAME, 'SNAPSHOT') != true
+        with:
+          node-version: '22.x'
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to Docker registry
+        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Build the tagged Docker image
+        if: contains(env.TAG_NAME, 'SNAPSHOT')
+        run: |
+          echo ${{ env.TAG_NAME }}
+          echo "Building image with SHA: ${{ github.sha }}"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --push \
+            -t perfana/perfana-grafana:${{ env.TAG_NAME }}-${{ github.sha }} \
+            -t perfana/perfana-grafana:${{ env.TAG_NAME }} .
+      
+      - name: Move cache
+        if: contains(env.TAG_NAME, 'SNAPSHOT')
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+#      - name: Run Snyk to check Docker image for vulnerabilities
+#        continue-on-error: false
+#        uses: snyk/actions/docker@master
+#        env:
+#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+#        with:
+#          image: perfana/perfana-grafana-test:${{ env.TAG_NAME }}
+#          args: --severity-threshold=high --app-vulns
+#      - name: Push the tagged Docker image
+#        if: contains(env.TAG_NAME, 'SNAPSHOT')
+#        run: docker push perfana/perfana-grafana-test:${{ env.TAG_NAME }}
+
