@@ -22,7 +22,7 @@
     "mysql": "^2.18.1",
     "node-fetch": "^2.6.9",
     "pg": "^8.8.0",
-    "semver": "^7.3.8",
+    "semver": "^7.7.2",
     "winston": "^3.17.0"
   },
   "devDependencies": {
