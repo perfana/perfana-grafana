@@ -878,21 +878,32 @@ module.exports.deleteExpiredSnapshots = async (testRun) => {
   }
 };
 
-module.exports.updateVersion = async () => {
-  const packagePath = path.join(__dirname, '..', 'package.json');
-  const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-  const version = packageData.version;
+module.exports.updateVersion = () => {
+  const version = fs.readFileSync(
+    path.resolve(__dirname, '../version.txt'),
+    'utf8',
+  );
 
-  try {
-    return await mc
-      .get()
-      .db(db)
-      .collection('version')
-      .replaceOne({}, { version: version }, { upsert: true });
-  } catch (e) {
-    logger.logError(e, 'database operation');
-    throw e;
-  }
+  return mc
+    .get()
+    .db(db)
+    .collection('versions')
+    .findOneAndUpdate(
+      {
+        component: 'perfana-grafana',
+      },
+      {
+        $set: {
+          version: version,
+        },
+      },
+      {
+        upsert: true,
+        returnOriginal: false,
+      },
+    )
+    .then((as) => as)
+    .catch((e) => console.log(e));
 };
 
 module.exports.getVersion = async () => {
@@ -1198,18 +1209,12 @@ module.exports.updateReasonsNotValid = async (testRunId, reasons) => {
  */
 module.exports.getAllBenchmarks = async () => {
   try {
-    return await mc
-      .get()
-      .db(db)
-      .collection('benchmarks')
-      .find({})
-      .toArray();
+    return await mc.get().db(db).collection('benchmarks').find({}).toArray();
   } catch (e) {
     logger.logError(e, 'getAllBenchmarks');
     throw e;
   }
 };
-
 
 /**
  * Get test runs for expiry based on end date and expired flag
@@ -1223,10 +1228,7 @@ module.exports.getTestRunsForExpiry = async (expiryDate) => {
       .collection('testRuns')
       .find({
         end: { $lte: expiryDate },
-        $or: [
-          { expired: { $exists: false } },
-          { expired: false }
-        ]
+        $or: [{ expired: { $exists: false } }, { expired: false }],
       })
       .toArray();
   } catch (e) {
@@ -1245,10 +1247,7 @@ module.exports.expireTestRun = async (testRunId) => {
       .get()
       .db(db)
       .collection('testRuns')
-      .updateOne(
-        { _id: testRunId },
-        { $set: { expired: true } }
-      );
+      .updateOne({ _id: testRunId }, { $set: { expired: true } });
   } catch (e) {
     logger.logError(e, 'expireTestRun');
     throw e;
@@ -1295,14 +1294,10 @@ module.exports.getApplicationByName = async (name) => {
  */
 module.exports.getConfigurationByTypeAndKey = async (type, key) => {
   try {
-    return await mc
-      .get()
-      .db(db)
-      .collection('configurations')
-      .findOne({ 
-        type: type,
-        key: key 
-      });
+    return await mc.get().db(db).collection('configurations').findOne({
+      type: type,
+      key: key,
+    });
   } catch (e) {
     logger.logError(e, 'getConfigurationByTypeAndKey');
     throw e;

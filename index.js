@@ -22,7 +22,11 @@ const {
 } = require('./helpers/perfana-mongo');
 
 const grafanaSync = require('./grafana-sync/grafana-sync');
-const { sync, testRunSanityChecker, sanityChecker } = require('./config/default');
+const {
+  sync,
+  testRunSanityChecker,
+  sanityChecker,
+} = require('./config/default');
 const TestRunSanityChecker = require('./test-run-sanity-checker/test-run-sanity-checker');
 const SanityChecker = require('./sanity-checker/sanity-checker');
 
@@ -35,13 +39,16 @@ process.on('unhandledRejection', (reason, promise) => {
 const db = require('./helpers/mongoDb');
 
 // Initialize TestRunSanityChecker and SanityChecker
-const testRunSanityChecker_instance = new TestRunSanityChecker(testRunSanityChecker);
+const testRunSanityChecker_instance = new TestRunSanityChecker(
+  testRunSanityChecker,
+);
 const sanityChecker_instance = new SanityChecker(sanityChecker);
 
 const main = async () => {
   try {
     await db.connect();
     logger.logDatabase('connection', true);
+    updateVersion();
     startSync();
     startTestRunSanityChecker();
     startSanityChecker();
