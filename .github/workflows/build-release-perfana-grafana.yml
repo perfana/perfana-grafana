@@ -81,7 +81,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to Docker registry
-        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: Build the tagged Docker image
         working-directory: main
         if: contains(env.TAG_NAME, 'SNAPSHOT') != true
