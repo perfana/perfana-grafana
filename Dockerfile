@@ -25,7 +25,7 @@ RUN npm ci --only=production
 # Copy all application files
 COPY . .
 
-FROM node:22.15-alpine
+FROM node:22.17.1-alpine
 
 # Install required packages
 RUN apk update && apk upgrade --available && apk add --no-cache bash && sync && apk --purge del apk-tools
